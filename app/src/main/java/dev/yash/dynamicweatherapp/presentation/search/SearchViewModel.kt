@@ -39,24 +39,41 @@ class SearchViewModel @Inject constructor(
             }
         }
 
-        // 2. Observe Saved Locations and fetch live weather for each of them concurrently
+        // 2. Observe Saved Locations and fetch live weather concurrently without blocking UI
         viewModelScope.launch {
             locationDao.getSavedLocations().collect { savedList ->
-                val deferredList = savedList.map { location ->
-                    async {
-                        val weatherResult = repository.getWeatherData(location.latitude, location.longitude)
-                        SavedLocationWeatherState(
-                            location = location,
-                            weatherInfo = weatherResult.getOrNull()
-                        )
-                    }
+
+                // 1. Instantly show the UI in a "Loading" state
+                _state.update { currentState ->
+                    currentState.copy(
+                        savedLocations = savedList.map {
+                            SavedLocationWeatherState(it, null, isLoading = true, isError = false)
+                        }
+                    )
                 }
-                // Wait for all network calls to finish, then update the UI
-                val weatherList = deferredList.awaitAll()
-                _state.update { it.copy(savedLocations = weatherList) }
+
+                // 2. Fetch data asynchronously
+                viewModelScope.launch {
+                    val deferredList = savedList.map { location ->
+                        async {
+                            val result = repository.getWeatherData(location.latitude, location.longitude)
+                            SavedLocationWeatherState(
+                                location = location,
+                                weatherInfo = result.getOrNull(),
+                                isLoading = false,          // Stop spinning
+                                isError = result.isFailure  // Flag if offline
+                            )
+                        }
+                    }
+
+                    // 3. Update UI with final results (or errors)
+                    val weatherList = deferredList.awaitAll()
+                    _state.update { it.copy(savedLocations = weatherList) }
+                }
             }
         }
     }
+
 
     fun onSearchQueryChange(query: String) {
         _state.update { it.copy(searchQuery = query) }

@@ -18,3 +18,6 @@ design_refrences/
 /app/build/
 *.apk
 *.aab
+
+PROJECT_CONTEXT.md
+PROJECT_STRUCTURE.txt

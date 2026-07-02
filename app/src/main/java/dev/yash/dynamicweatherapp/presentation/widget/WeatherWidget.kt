@@ -6,50 +6,69 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.glance.*
+import androidx.glance.action.actionStartActivity
+import androidx.glance.action.clickable
 import androidx.glance.appwidget.GlanceAppWidget
-import androidx.glance.appwidget.GlanceAppWidgetReceiver
+import androidx.glance.appwidget.action.actionStartActivity
 import androidx.glance.appwidget.provideContent
 import androidx.glance.color.ColorProvider
 import androidx.glance.layout.*
 import androidx.glance.text.*
 import dagger.hilt.android.EntryPointAccessors
 import kotlinx.coroutines.flow.firstOrNull
+import dev.yash.dynamicweatherapp.MainActivity
+import kotlin.math.roundToInt
 
 class WeatherWidget : GlanceAppWidget() {
 
-    // provideGlance runs in the background, making it safe to fetch data!
     override suspend fun provideGlance(context: Context, id: GlanceId) {
-
-        // 1. Grab our database and repository using the Hilt Entry Point
-        val entryPoint = EntryPointAccessors.fromApplication(
-            context.applicationContext,
-            WidgetEntryPoint::class.java
-        )
+        val entryPoint = EntryPointAccessors.fromApplication(context, WidgetEntryPoint::class.java)
         val locationDao = entryPoint.locationDao()
-        val repository = entryPoint.weatherRepository()
+        val weatherRepo = entryPoint.weatherRepository()
 
-        // 2. Setup default fallback data
-        var cityName = "No City Saved"
-        var temperature = "--"
-        var condition = "Open app to add a city"
+        val savedLocations = locationDao.getSavedLocations().firstOrNull()
+        val primaryLocation = savedLocations?.firstOrNull()
 
-        // 3. Fetch the first saved city from the database
-        val savedLocations = locationDao.getSavedLocations().firstOrNull() ?: emptyList()
-        val targetLocation = savedLocations.firstOrNull()
+        var tempString = "--°"
+        var conditionString = "Tap to open app"
 
-        // 4. If we have a city, fetch the live weather for it
-        if (targetLocation != null) {
-            cityName = targetLocation.name
-            repository.getWeatherData(targetLocation.latitude, targetLocation.longitude)
-                .onSuccess { weather ->
-                    temperature = "${weather.current.temperature.toInt()}°"
-                    condition = weather.current.condition
-                }
+        if (primaryLocation != null) {
+            // Fetch the weather for the primary location using your repository
+            // Note: Update "getWeather" to match the exact method name in your WeatherRepository!
+            val weatherResult = weatherRepo.getWeatherData(
+                lat = primaryLocation.latitude,
+                long = primaryLocation.longitude
+            )
+
+            // Extract data if the network/cache call was successful
+            weatherResult.onSuccess { weatherInfo ->
+                tempString = "${weatherInfo.current.temperature.roundToInt()}°"
+                conditionString = weatherInfo.current.condition
+            }
         }
 
-        // 5. Draw the actual widget UI
         provideContent {
-            WidgetLayout(cityName, temperature, condition)
+            if (primaryLocation == null) {
+                Box(
+                    modifier = GlanceModifier
+                        .fillMaxSize()
+                        .background(ColorProvider(Color(0xCC121212L), night = Color(0xFF90CAF9)))
+                        .padding(8.dp)
+                        .clickable(actionStartActivity<MainActivity>()), // Opens app
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "Open AtmosLive to add a city.",
+                        style = TextStyle(color = ColorProvider(Color.White, night = Color(0xFF90CAF9)), fontSize = 14.sp)
+                    )
+                }
+            } else {
+                WidgetLayout(
+                    cityName = primaryLocation.name,
+                    temp = tempString,
+                    desc = conditionString
+                )
+            }
         }
     }
 }
@@ -59,8 +78,9 @@ private fun WidgetLayout(cityName: String, temp: String, desc: String) {
     Box(
         modifier = GlanceModifier
             .fillMaxSize()
-            .background(ColorProvider(day = Color(0xFF121212).copy(alpha = 0.8f), night = Color(0xFF121212).copy(alpha = 0.8f)))
-            .padding(8.dp),
+            .background(ColorProvider(day = Color(0xCC121212L), night = Color(0xCC121212L)))
+            .padding(12.dp)
+            .clickable(actionStartActivity<MainActivity>()), // Opens app when clicking layout
         contentAlignment = Alignment.Center
     ) {
         Row(
@@ -71,21 +91,20 @@ private fun WidgetLayout(cityName: String, temp: String, desc: String) {
             Text(
                 text = temp,
                 style = TextStyle(
-                    // Explicitly setting day and night colors
                     color = ColorProvider(day = Color.White, night = Color.White),
-                    fontSize = 42.sp,
+                    fontSize = 38.sp,
                     fontWeight = FontWeight.Bold
                 )
             )
+            Spacer(modifier = GlanceModifier.width(12.dp))
             Column(
-                modifier = GlanceModifier.fillMaxSize(),
+                modifier = GlanceModifier.fillMaxHeight(),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalAlignment = Alignment.CenterHorizontally
+                horizontalAlignment = Alignment.Start
             ) {
                 Text(
                     text = cityName,
                     style = TextStyle(
-                        // Explicitly setting day and night colors
                         color = ColorProvider(day = Color.White, night = Color.White),
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold
@@ -95,7 +114,6 @@ private fun WidgetLayout(cityName: String, temp: String, desc: String) {
                 Text(
                     text = desc,
                     style = TextStyle(
-                        // THE FIX: Explicitly setting day and night colors
                         color = ColorProvider(day = Color(0xFF90CAF9), night = Color(0xFF90CAF9)),
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Medium
@@ -104,8 +122,4 @@ private fun WidgetLayout(cityName: String, temp: String, desc: String) {
             }
         }
     }
-}
-// The Broadcast Receiver
-class WeatherWidgetReceiver : GlanceAppWidgetReceiver() {
-    override val glanceAppWidget: GlanceAppWidget = WeatherWidget()
 }

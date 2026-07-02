@@ -10,5 +10,6 @@ data class HomeState(
     val error: String? = null,
     val locationName: String = "Locating...",
     val temperatureUnit: TemperatureUnit = TemperatureUnit.CELSIUS,
-    val hasAcceptedPrivacyPolicy: Boolean? = null
+    val hasAcceptedPrivacyPolicy: Boolean? = null,
+    val lastSyncTime: Long? = null
 )

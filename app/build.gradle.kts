@@ -15,7 +15,7 @@ android {
         minSdk = 29
         targetSdk = 35
         versionCode = 2
-        versionName = "2.5.0"
+        versionName = "2.6.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -30,15 +30,15 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            signingConfig = signingConfigs.getByName("debug")
+
         }
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-    kotlinOptions{
-        jvmTarget = "17"
-    }
+
     buildFeatures {
         compose = true
     }
@@ -108,4 +108,10 @@ dependencies {
     implementation("androidx.glance:glance-material3:1.1.0")
     // Android 12+ Splash Screen API
     implementation("androidx.core:core-splashscreen:1.0.1")
+}
+kotlin {
+    compilerOptions {
+        // If your old jvmTarget was "17", use JVM_17. If it was "1.8", use JVM_1_8.
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+    }
 }

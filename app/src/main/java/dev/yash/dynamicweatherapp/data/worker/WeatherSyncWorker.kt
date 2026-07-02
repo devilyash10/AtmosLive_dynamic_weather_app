@@ -28,25 +28,23 @@ class WeatherSyncWorker @AssistedInject constructor(
 
             if (savedLocations.isEmpty()) return Result.success()
 
-            savedLocations.forEach { location ->
-                val result = weatherRepository.getWeatherData(location.latitude, location.longitude)
+            // Only check the Primary (First) location to prevent notification spam
+            val primaryLocation = savedLocations.first()
 
-                result.fold(
-                    onSuccess = { weatherInfo ->
-                        // WMO Codes for Heavy Rain, Violent Showers, and Thunderstorms
-                        // Bulletproof severe weather list handling both API formats:
-                        val severeCodes = listOf("65", "82", "95", "96", "99", "11d", "11n", "09d", "09n")
+            val result = weatherRepository.getWeatherData(primaryLocation.latitude, primaryLocation.longitude)
 
-
-                        if (severeCodes.contains(weatherInfo.current.iconId.toString())) {
-                            showSevereWeatherNotification(location.name, weatherInfo.current.condition)
-                        }
-                    },
-                    onFailure = { error ->
-                        Log.e("WeatherSyncWorker", "Failed to sync ${location.name}: ${error.message}")
+            result.fold(
+                onSuccess = { weatherInfo ->
+                    val severeCodes = listOf("65", "82", "95", "96", "99", "11d", "11n", "09d", "09n")
+                    if (severeCodes.contains(weatherInfo.current.iconId.toString())) {
+                        showSevereWeatherNotification(primaryLocation.name, weatherInfo.current.condition)
                     }
-                )
-            }
+                },
+                onFailure = { error ->
+                    Log.e("WeatherSyncWorker", "Failed to sync ${primaryLocation.name}: ${error.message}")
+                }
+            )
+
             Result.success()
         } catch (e: Exception) {
             Result.retry()

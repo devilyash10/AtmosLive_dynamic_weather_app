@@ -17,6 +17,10 @@ import dev.yash.dynamicweatherapp.presentation.theme.NimbusAccentBlue
 import dev.yash.dynamicweatherapp.presentation.theme.NimbusTextHint
 import dev.yash.dynamicweatherapp.presentation.theme.NimbusTextWhite
 
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
+import dev.yash.dynamicweatherapp.presentation.common.shimmerEffect
+
 @Composable
 fun WeatherMetricsGrid(
     currentWeather: CurrentWeather,
@@ -135,6 +139,38 @@ fun MetricCard(
                 style = MaterialTheme.typography.labelMedium,
                 color = NimbusTextHint
             )
+        }
+    }
+}
+
+@Composable
+fun WeatherMetricsGridSkeleton(modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        repeat(3) { // 3 Rows
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                // Left Box
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(110.dp)
+                        .clip(RoundedCornerShape(20.dp))
+                        .shimmerEffect()
+                )
+                // Right Box
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(110.dp)
+                        .clip(RoundedCornerShape(20.dp))
+                        .shimmerEffect()
+                )
+            }
         }
     }
 }

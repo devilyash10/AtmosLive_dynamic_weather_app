@@ -11,6 +11,7 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Place
@@ -107,8 +108,11 @@ fun SearchScreen(
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(16.dp))
                     .clickable {
+                        // FIX 1: Flat Navigation for GPS Button
                         navController.navigate(Screen.Home.route) {
-                            popUpTo(Screen.Home.route) { inclusive = true }
+                            popUpTo(navController.graph.startDestinationId) { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
                         }
                     }
             ) {
@@ -185,6 +189,7 @@ fun SearchScreen(
                             location = state.searchResults[index],
                             onClick = {
                                 viewModel.saveLocation(state.searchResults[index])
+                                // FIX 2: Flat Navigation for Active Search Click
                                 navController.navigate(
                                     Screen.Home.passCoordinates(
                                         state.searchResults[index].latitude,
@@ -192,7 +197,9 @@ fun SearchScreen(
                                         state.searchResults[index].name
                                     )
                                 ) {
-                                    popUpTo(Screen.Home.route) { inclusive = true }
+                                    popUpTo(navController.graph.startDestinationId) { saveState = true }
+                                    launchSingleTop = true
+                                    restoreState = true
                                 }
                             }
                         )
@@ -213,6 +220,7 @@ fun SearchScreen(
                                 temperatureUnit = state.temperatureUnit,
                                 onDeleteClick = { viewModel.deleteLocation(dbLocationState.location) },
                                 onClick = {
+                                    // FIX 3: Flat Navigation for Saved Location Click
                                     navController.navigate(
                                         Screen.Home.passCoordinates(
                                             dbLocationState.location.latitude,
@@ -220,7 +228,9 @@ fun SearchScreen(
                                             dbLocationState.location.name
                                         )
                                     ) {
-                                        popUpTo(Screen.Home.route) { inclusive = true }
+                                        popUpTo(navController.graph.startDestinationId) { saveState = true }
+                                        launchSingleTop = true
+                                        restoreState = true
                                     }
                                 }
                             )
@@ -372,7 +382,17 @@ fun SavedLocationRow(
             }
 
             // RIGHT SIDE: Weather Icon and Temperature
-            if (state.weatherInfo != null) {
+            if (state.isLoading) {
+                CircularProgressIndicator(color = NimbusAccentBlue, modifier = Modifier.size(24.dp))
+            } else if (state.isError || state.weatherInfo == null) {
+                // Shows a cloud-off icon if the network failed
+                Icon(
+                    imageVector = androidx.compose.material.icons.Icons.Filled.CloudOff,
+                    contentDescription = "Offline",
+                    tint = NimbusTextHint,
+                    modifier = Modifier.size(28.dp)
+                )
+            } else {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
                         painter = painterResource(id = getWeatherIconResource(state.weatherInfo.current.iconId)),
@@ -387,8 +407,6 @@ fun SavedLocationRow(
                         color = NimbusTextWhite
                     )
                 }
-            } else {
-                CircularProgressIndicator(color = NimbusAccentBlue, modifier = Modifier.size(24.dp))
             }
         }
     }

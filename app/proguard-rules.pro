@@ -1,28 +1,27 @@
-# Add project specific ProGuard rules here.
-# You can control the set of applied configuration files using the
-# proguardFiles setting in build.gradle.
-#
-# For more details, see
-#   http://developer.android.com/guide/developing/tools/proguard.html
-
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class name to the JavaScript interface
-# class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-#   public *;
-#}
-
-# Uncomment this to preserve the line number information for
-# debugging stack traces.
-#-keepattributes SourceFile,LineNumberTable
-
-# If you keep the line number information, uncomment this to
-# hide the original source file name.
-#-renamesourcefileattribute SourceFile
-
-# Retrofit/GSON/Moshi Rules: Keep all data classes safe from obfuscation
--keep class dev.yash.dynamicweatherapp.** { *; }
-
-# If you specifically use Gson or Moshi, add these standard safety rules:
+# -------------------------------------------------------------------------
+# GSON & RETROFIT RULES
+# -------------------------------------------------------------------------
+# Keep generic signature information and annotations
 -keepattributes Signature
 -keepattributes *Annotation*
+-keepattributes EnclosingMethod
+
+# Keep Gson's internal classes safe
+-keep class sun.misc.Unsafe { *; }
+-dontwarn sun.misc.Unsafe
+-keep class com.google.gson.stream.** { *; }
+
+# Prevent ProGuard from renaming our Network Data Transfer Objects (DTOs)
+-keep class dev.yash.dynamicweatherapp.data.remote.dto.** { *; }
+
+# -------------------------------------------------------------------------
+# ROOM DATABASE RULES
+# -------------------------------------------------------------------------
+# Protect your local database entities from being obfuscated
+-keep class dev.yash.dynamicweatherapp.data.local.entity.** { *; }
+
+# -------------------------------------------------------------------------
+# JETPACK GLANCE (WIDGET) RULES
+# -------------------------------------------------------------------------
+# Keep the Widget Receiver so Android can find it on the Home Screen
+-keep class dev.yash.dynamicweatherapp.presentation.widget.WeatherWidgetReceiver { *; }

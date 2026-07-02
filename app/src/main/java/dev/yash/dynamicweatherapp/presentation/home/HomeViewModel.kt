@@ -37,14 +37,23 @@ class HomeViewModel @Inject constructor(
     private val passedCityName: String? = savedStateHandle.get<String>("cityName")
 
     init {
+        //privacy policy check
         viewModelScope.launch {
             settingsRepository.hasAcceptedPrivacyPolicy.collect { accepted ->
                 _state.update { it.copy(hasAcceptedPrivacyPolicy = accepted) }
-
-                // Safe safeguard: Only trigger weather loading if they have accepted
-                if (accepted) {
+                if (accepted && _state.value.weatherInfo == null) {
                     loadWeatherInfo()
                 }
+//                if (_state.value.weatherInfo == null) {
+//                    loadWeatherInfo()
+//                }
+            }
+        }
+
+        // Observe temperature unit for the Home Screen
+        viewModelScope.launch {
+            settingsRepository.temperatureUnit.collect { unit ->
+                _state.update { it.copy(temperatureUnit = unit) }
             }
         }
     }
@@ -79,14 +88,15 @@ class HomeViewModel @Inject constructor(
                     weatherInfo = weatherData,
                     isLoading = false,
                     error = null,
-                    locationName = locationName
+                    locationName = locationName,
+                    lastSyncTime = System.currentTimeMillis()
                 ) }
             },
             onFailure = { error ->
                 _state.update { it.copy(
-                    weatherInfo = null,
+                    // Do NOT set weatherInfo = null here. Keep the old data!
                     isLoading = false,
-                    error = error.message ?: "An unexpected network error occurred."
+                    error = "Internet is currently unavailable. Showing last sync weather data, please connect to internet and refresh."
                 ) }
             }
         )
@@ -106,5 +116,16 @@ class HomeViewModel @Inject constructor(
 
             settingsRepository.setPrivacyPolicyAccepted(true)
         }
+    }
+
+    fun forceRefresh() {
+        // Prevent spam-clicking
+        if (_state.value.isLoading) return
+
+        _state.update { it.copy(isLoading = true, error = null) }
+
+        // Call whatever function you use to initially load the weather
+        // (e.g., loadWeatherInfo(), fetchWeatherForLocation(), etc.)
+        loadWeatherInfo()
     }
 }

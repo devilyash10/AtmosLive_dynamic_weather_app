@@ -8,7 +8,9 @@ import dev.yash.dynamicweatherapp.domain.settings.TemperatureUnit
 //A wrapper class to hold the DB location and its live weather data together
 data class SavedLocationWeatherState(
     val location: SavedLocationEntity,
-    val weatherInfo: WeatherInfo? = null
+    val weatherInfo: WeatherInfo? = null,
+    val isLoading: Boolean = false,
+    val isError: Boolean = false
 )
 
 data class SearchState(

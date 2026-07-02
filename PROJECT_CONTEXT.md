@@ -170,3 +170,21 @@ Finalized UI/UX edge cases to ensure graceful degradation and intuitive onboardi
 - Revamped the AboutDeveloperDialog with a personalized professional biography and mandatory Open-Meteo API attribution to ensure legal compliance.
 - Removed deprecated UI toggles from the Settings screen to ensure 100% feature functionality for portfolio presentation.
   "
+
+
+git commit -m "Release v2.6.0: Implement Glance Widget, Offline Support, and Navigation Architecture fixes
+
+Features:
+- feat(widget): Implement Jetpack Glance home screen widget with Room DB integration for offline rendering.
+- feat(settings): Overhaul SettingsScreen with a premium Glassmorphism UI, sync intervals, and dedicated Privacy/About dialogs.
+- feat(home): Add smart refresh ticker to LocationHeader to calculate exact 'time ago' since last sync.
+
+Architecture & Bug Fixes:
+- fix(navigation): Resolve backstack entanglement in SearchScreen and CustomBottomNavBar using popUpTo and restoreState, preventing duplicate screen stacking.
+- fix(lifecycle): Implement state-holding ViewModels to prevent redundant Open-Meteo API calls on tab re-selection.
+- fix(ui): Prevent location permission launcher loop on returning to HomeScreen.
+
+Build & Security:
+- chore(build): Bump version code to 6 and version name to 2.6.0.
+- chore(security): Add proguard-rules.pro to protect network DTOs, Room Entities, and Gson parsers from aggressive R8 minification.
+- docs(readme): Update README.md with production architecture details, offline-first capabilities, and v2.6.0 release links."
